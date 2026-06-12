@@ -1,0 +1,53 @@
+name: Pipeline CI/CD Completo
+
+on:
+  push:
+    branches: [ "main" ]
+
+# Permissões necessárias para publicar no GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  # JOB 1: INTEGRAÇÃO CONTÍNUA (CI)
+  testes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+      
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          
+      - name: Instalar dependências
+        run: npm install
+        
+      - name: Rodar testes automatizados
+        run: npm test
+
+  # JOB 2: ENTREGA CONTÍNUA (CD)
+  deploy-producao:
+    needs: testes # SÓ RODA SE OS TESTES PASSAREM!
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+      
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v4
+        
+      - name: Empacotar arquivos (HTML/JS)
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+          
+      - name: Publicar no Servidor
+        id: deployment
+        uses: actions/deploy-pages@v4
